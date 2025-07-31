@@ -1,37 +1,36 @@
 import passport from "passport";
-import { Strategy as LocalStrategy} from "passport-local";
+import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcryptjs";
-import User from "../models/user.js";
+import User from "../models/user.js"; // ✅ Use capital U for clarity
 
-passport.use(new LocalStrategy(async (username, password, done)=> {
+// ✅ Local strategy
+passport.use(new LocalStrategy(async (username, password, done) => {
+  try {
+    const existingUser = await User.findOne({ username }); // ✅ No conflict
+    if (!existingUser) return done(null, false, { message: "User not found" });
 
-    try{
-        const user=await user.findOne({username});
-        if(!user) return done(null,false,{message:"user not found"});
+    const isMatch = await bcrypt.compare(password, existingUser.password); // ✅ fixed typo
+    if (isMatch) return done(null, existingUser);
+    else return done(null, false, { message: "Incorrect password" });
 
-        const ismatch= await bcrypt.compare(password,user.passport);
-        if(ismatch) return done(null,user);
-        else return done(null,false,{message:"incorrect password"});
-    }
-    catch(error){
-        return done(error);
-    }
+  } catch (error) {
+    return done(error);
   }
-));
+}));
 
-passport.serializeUser((user,done)=>{
-    console.log("we are inside serialize user");
-    done(null,user._id);
+// ✅ Serialize user into session
+passport.serializeUser((user, done) => {
+  console.log("✅ Inside serializeUser");
+  done(null, user._id);
 });
 
-passport.deserializeUser(async(_id,done)=>{
-    
-    try{
-        console.log("we are inside deserialize user");
-    const user=await user.findById(_id);
-    done(null,user);
-    }
-    catch(error){
-        done(error);
-    }
+// ✅ Deserialize user from session
+passport.deserializeUser(async (_id, done) => {
+  try {
+    console.log("✅ Inside deserializeUser");
+    const user = await User.findById(_id); // ✅ 'User', not 'user'
+    done(null, user);
+  } catch (error) {
+    done(error);
+  }
 });
